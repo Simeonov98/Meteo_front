@@ -3,5 +3,5 @@
 @tailwind utilities;
 
 body {
-    @apply bg-amber-600;
+    @apply bg-base;
 }
