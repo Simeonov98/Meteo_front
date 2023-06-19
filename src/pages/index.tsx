@@ -38,13 +38,8 @@ const Home: NextPage = () => {
       <section className="relative w-full px-8 text-gray-700 bg-firstLayer body-font rounded-b-lg">
           <div className="container flex flex-col flex-wrap items-center justify-between py-5 mx-auto md:flex-row max-w-7x1">
           <a href="#_" className="relative z-10 flex items-center w-auto text-2xl font-extrabold leading-none text-white select-none">MergeMeteo.</a>
-          <nav className=""></nav>
-          </div>
-      </section>
-        <main className="flex h-screen justify-center">
-        
-        <div className="column w-1/3 border-red-600 border-solid border-2 rounded-lg md:max-w-xl bg-firstLayer">
-          <div className="border-slate-400 flex rounded-xl border-b bg-amber-400 p-4">
+          <nav className="">
+            <div className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3">
             {!user.isSignedIn && (
               <div className="flex justify-center">
                 <SignInButton />
@@ -52,6 +47,13 @@ const Home: NextPage = () => {
             )}
             {user.isSignedIn && <SignOutButton />}
           </div>
+          </nav>
+          </div>
+      </section>
+        <main className="flex h-screen justify-center">
+        
+        <div className="column w-1/3 border-red-600 border-solid border-2 rounded-lg md:max-w-xl bg-firstLayer">
+          
 
           <Tabs id="custom-animation" value="html">
             <TabsHeader>
