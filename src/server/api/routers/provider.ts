@@ -139,7 +139,7 @@ export const providersRouter = createTRPCRouter({
         _avg: { tmax: true, tmin: true,},
         where: {
           forecastDate: {
-            gte: new Date(Date.now())
+            gt: new Date(Date.now())
               .toISOString()
               .split("T")[0]
               ?.concat("T00:00:00.000Z"),
@@ -160,7 +160,7 @@ export const providersRouter = createTRPCRouter({
         _avg: { tmax: true, tmin: true,  },
         where: {
           forecastDay: {
-            gte: new Date(Date.now())
+            gt: new Date(Date.now())
               .toISOString()
               .split("T")[0]
               ?.concat("T00:00:00.000Z"),
