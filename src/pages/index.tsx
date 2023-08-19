@@ -26,7 +26,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
-import DaliVali from "./dalivali";
+// import DaliVali from "./dalivali";
 import { Chart } from "chart.js/dist";
 import { date } from "zod";
 
@@ -79,10 +79,10 @@ const Home: NextPage = () => {
 
   const [provider, setProvider] = useState<string>();
 
-  const { data: dataFdateDaliVali } = api.providers.getForecastDate.useQuery({
-    cityId: city,
-    date: currentDate,
-  });
+  // const { data: dataFdateDaliVali } = api.providers.getForecastDate.useQuery({
+  //   cityId: city,
+  //   date: currentDate,
+  // });
 
   const { data: dataDaliVali } = api.providers.getDaliVali.useQuery({
     cityId: city,
@@ -99,13 +99,13 @@ const Home: NextPage = () => {
   const { data: dataSoinoptikForToday } =
     api.providers.getForTodayDaysSino.useQuery({ cityId: city });
 
-  function SumAvg(data: any[] | undefined): { avgTmax: number; avgTmin: number; avgThum: number } {
+  function SumAvg(data: any[]): { avgTmax: number; avgTmin: number; avgThum: number } {
     const sumTmax = data?.reduce((acc: any, obj: { _avg: { tmax: any; }; }) => acc + obj._avg.tmax, 0);
     const sumTmin = data?.reduce((acc: any, obj: { _avg: { tmin: any; }; }) => acc + obj._avg.tmin, 0);
     const sumThum = data?.reduce((acc: any, obj: { _avg: { humidity: any; }; }) => acc + obj._avg.humidity, 0);
-    const avgTmax = sumTmax / data?.length;
-    const avgTmin = sumTmin / data?.length;
-    const avgThum = sumThum / data?.length;
+    const avgTmax = sumTmax / data.length;
+    const avgTmin = sumTmin / data.length;
+    const avgThum = sumThum / data.length;
     return { avgTmax, avgTmin, avgThum };
   }
 
@@ -131,7 +131,7 @@ const Home: NextPage = () => {
       if (!groups[dateD]) {
         groups[dateD] = [];
       }
-      groups[dateD].push(item);
+      groups[dateD]?.push(item);
       return groups;
     },
     {} as {
@@ -155,10 +155,21 @@ const Home: NextPage = () => {
       if (!groups[dateF]) {
         groups[dateF] = [];
       }
-      groups[dateF].push(item);
+      groups[dateF]?.push(item);
       return groups;
     },
-    {}
+    {} as {
+      [key: number]: (Prisma.PickArray<
+        Prisma.FreemeteoGroupByOutputType,
+        ("forecastDay" | "createdAt")[]
+      > & {
+        _avg: {
+          tmax: number | null;
+          tmin: number | null;
+          
+        };
+      })[]
+    }
   );
   const groupedByCreateAtSino = dataSoinoptikForToday?.reduce(
     (groups, item) => {
@@ -166,10 +177,21 @@ const Home: NextPage = () => {
       if (!groups[dateS]) {
         groups[dateS] = [];
       }
-      groups[dateS].push(item);
+      groups[dateS]?.push(item);
       return groups;
     },
-    {}
+    {} as {
+      [key: number]: (Prisma.PickArray<
+        Prisma.SinoptikGroupByOutputType,
+        ("forecastDate" | "createdAt")[]
+      > & {
+        _avg: {
+          tmax: number | null;
+          tmin: number | null;
+         
+        };
+      })[]
+    }
   );
   //----------------------------------- groups for the func
 
@@ -220,8 +242,16 @@ const Home: NextPage = () => {
     avgTmin:number,
     avgHumidity:number,
   };}
-  function calculateAverages<t>(data:t) {
-    const reformattedData = {};
+  type avgRes = {
+    [key: string]: {
+      tmaxSum: number;
+      tminSum: number;
+      humiditySum: number;
+      count: number;
+    };
+  };
+  function calculateAverages(data:any) {
+    const reformattedData: avgRes = {};
 
     // Reformat the createdAt date and calculate averages
     for (const key in data) {
@@ -236,10 +266,10 @@ const Home: NextPage = () => {
             count: 0,
           };
         }
-        reformattedData[createdAt].tmaxSum += entry._avg.tmax;
-        reformattedData[createdAt].tminSum += entry._avg.tmin;
-        reformattedData[createdAt].humiditySum += entry._avg.humidity;
-        reformattedData[createdAt].count++;
+        reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
+        reformattedData[createdAt]!.tminSum += entry._avg.tmin;
+        reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
+        reformattedData[createdAt]!.count++;
       }
     }
 
@@ -247,9 +277,9 @@ const Home: NextPage = () => {
     const result:Result = {};
     for (const createdAt in reformattedData) {
       const avgEntry = reformattedData[createdAt];
-      const avgTmax = avgEntry.tmaxSum / avgEntry.count;
-      const avgTmin = avgEntry.tminSum / avgEntry.count;
-      const avgHumidity = avgEntry.humiditySum / avgEntry.count;
+      const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
+      const avgTmin = avgEntry!.tminSum / avgEntry!.count;
+      const avgHumidity = avgEntry!.humiditySum / avgEntry!.count;
 
       result[createdAt] = {
         avgTmax,
@@ -267,40 +297,7 @@ const Home: NextPage = () => {
 
   //---------------------func to do the same
 
-  const chartData = {
-    labels: Object.keys(averageDataForTodayDali)
-      .sort()
-      .map((forecastDay) => forecastDay.toString()),
-    // labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
-    datasets: [
-      {
-        label: "Tmax",
-        data: Object.keys(averageDataForTodayDali)
-          .sort()
-          ?.map((date) => averageDataForTodayDali[date].avgTmax),
-        fill: false,
-        borderColor: "rgb(255, 69, 0)",
-        tention: 0.7,
-        pointBackgroundColor: "red", // Color of the data points
-        pointBorderColor: "red", // Border color of the data points
-        pointRadius: 5, // Radius of the data points when not hovered
-        pointHoverRadius: 7, // Radius of the data points when hovered
-      },
-      {
-        label: "Tmin",
-        data: Object.keys(averageDataForTodayDali)
-          .sort()
-          ?.map((date) => averageDataForTodayDali[date].avgTmin),
-        fill: false,
-        borderColor: "rgb(75, 192, 192)",
-        tention: 0.7,
-        pointBackgroundColor: "blue", // Color of the data points
-        pointBorderColor: "blue", // Border color of the data points
-        pointRadius: 5, // Radius of the data points when not hovered
-        pointHoverRadius: 7, // Radius of the data points when hovered
-      },
-    ],
-  };
+  
   const chartOptions = {
     plugins: {
       legend: {
@@ -334,7 +331,7 @@ const Home: NextPage = () => {
           label: "Tmax",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmax),
+            ?.map((date) => data[date]?.avgTmax),
           fill: false,
           borderColor: "rgb(255, 69, 0)",
           tention: 0.7,
@@ -347,7 +344,7 @@ const Home: NextPage = () => {
           label: "Tmin",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmin),
+            ?.map((date) => data[date]?.avgTmin),
           fill: false,
           borderColor: "rgb(75, 192, 192)",
           tention: 0.7,
@@ -435,18 +432,18 @@ const Home: NextPage = () => {
           )}
           {city && (
             <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer ">
-              <div className="flex-row justify-center p-4">
+              {/* <div className="flex-row justify-center p-4">
                 Today from the past week
                 <p> current time: {dataDaliValiForToday?.length}</p>
                 <p> Tmax: {Math.round(SumAvg(dataDaliValiForToday).avgTmax)}</p>
                 <p> Tmin: {Math.round(SumAvg(dataDaliValiForToday).avgTmin)}</p>
                 <p> Thum: {Math.round(SumAvg(dataDaliValiForToday).avgThum)}</p>
                 <p>
-                  {/* {dataDaliValiForToday?.map(({ createdAt, forecastDay }) =>
+                  {dataDaliValiForToday?.map(({ createdAt, forecastDay }) =>
               forecastDay.getDate()
-            )} */}
+            )}
                 </p>
-              </div>
+              </div> */}
               {/* {SumAvg(dataDaliValiForToday).avgTmax} */}
               {/* <div>
                 <h1>Weather Averages</h1>
@@ -537,11 +534,11 @@ const Home: NextPage = () => {
                         </h2>
                         <p className="text-gray-600">
                           Max Temp:{" "}
-                          {averageDataForTodayFree[date].avgTmax.toFixed(2)} °C
+                          {averageDataForTodayFree[date]?.avgTmax.toFixed(2)} °C
                         </p>
                         <p className="text-gray-600">
                           Min Temp:{" "}
-                          {averageDataForTodayFree[date].avgTmin.toFixed(2)} °C
+                          {averageDataForTodayFree[date]?.avgTmin.toFixed(2)} °C
                         </p>
                         {/* <p className="text-gray-600">
                   Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
@@ -575,12 +572,12 @@ const Home: NextPage = () => {
                           </h2>
                           <p className="text-gray-600">
                             Max Temp:{" "}
-                            {averageDataForTodaySino[date].avgTmax.toFixed(2)}{" "}
+                            {averageDataForTodaySino[date]?.avgTmax.toFixed(2)}{" "}
                             °C
                           </p>
                           <p className="text-gray-600">
                             Min Temp:{" "}
-                            {averageDataForTodaySino[date].avgTmin.toFixed(2)}{" "}
+                            {averageDataForTodaySino[date]?.avgTmin.toFixed(2)}{" "}
                             °C
                           </p>
                           {/* <p className="text-gray-600">

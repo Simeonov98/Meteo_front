@@ -1,5 +1,5 @@
 import { SignIn, SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
-import { Dalivali } from "@prisma/client";
+import { Dalivali, Prisma } from "@prisma/client";
 // import LineChart from "horizon-tailwind-react/src/components/charts/LineChart"
 // import {lineChartDataOverallRevenue, lineChartOptionsOverallRevenue} from "horizon-tailwind-react/src/variables/charts";
 import {
@@ -26,7 +26,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
-import DaliVali from "./dalivali";
+// import DaliVali from "./dalivali";
 import { Chart } from "chart.js/dist";
 import { date } from "zod";
 
@@ -74,10 +74,10 @@ const Home: NextPage = () => {
 
   const [provider, setProvider] = useState<string>();
 
-  const { data: dataFdateDaliVali } = api.providers.getForecastDate.useQuery({
-    cityId: city,
-    date: currentDate,
-  });
+  // const { data: dataFdateDaliVali } = api.providers.getForecastDate.useQuery({
+  //   cityId: city,
+  //   date: currentDate,
+  // });
 
   const { data: dataDaliVali } = api.providers.getDaliVali.useQuery({
     cityId: city,
@@ -89,7 +89,7 @@ const Home: NextPage = () => {
     api.providers.getForNextWeekSino.useQuery({ cityId: city });
   const { data: dataFreemeteoForNextWeek } =
     api.providers.getForNextWeekFree.useQuery({ cityId: city });
-  function SumAvg<t>(data: t): {
+  function SumAvg(data:any[]): {
     avgTmax: number;
     avgTmin: number;
     avgThum: number;
@@ -109,10 +109,21 @@ const Home: NextPage = () => {
       if (!groups[dateD]) {
         groups[dateD] = [];
       }
-      groups[dateD].push(item);
+      groups[dateD]?.push(item);
       return groups;
     },
-    {}
+    {} as {
+      [key: number]: (Prisma.PickArray<
+        Prisma.DalivaliGroupByOutputType,
+        ("forecastDay" | "createdAt")[]
+      > & {
+        _avg: {
+          tmax: number | null;
+          tmin: number | null;
+          humidity: number | null;
+        };
+      })[]
+    }
   );
   const groupedByCreateAtFree = dataFreemeteoForNextWeek?.reduce(
     (groups, item) => {
@@ -120,10 +131,21 @@ const Home: NextPage = () => {
       if (!groups[dateF]) {
         groups[dateF] = [];
       }
-      groups[dateF].push(item);
+      groups[dateF]?.push(item);
       return groups;
     },
-    {}
+    {} as {
+      [key: number]: (Prisma.PickArray<
+        Prisma.FreemeteoGroupByOutputType,
+        ("forecastDay" | "createdAt")[]
+      > & {
+        _avg: {
+          tmax: number | null;
+          tmin: number | null;
+          
+        };
+      })[]
+    }
   );
   const groupedByCreateAtSino = dataSinoptikForNextWeek?.reduce(
     (groups, item) => {
@@ -131,10 +153,21 @@ const Home: NextPage = () => {
       if (!groups[dateS]) {
         groups[dateS] = [];
       }
-      groups[dateS].push(item);
+      groups[dateS]?.push(item);
       return groups;
     },
-    {}
+    {} as {
+      [key: number]: (Prisma.PickArray<
+        Prisma.SinoptikGroupByOutputType,
+        ("forecastDate" | "createdAt")[]
+      > & {
+        _avg: {
+          tmax: number | null;
+          tmin: number | null;
+          
+        };
+      })[]
+    }
   );
   type Result = {
     [key: string]: {
@@ -169,10 +202,10 @@ const Home: NextPage = () => {
             count: 0,
           };
         }
-        reformattedData[createdAt].tmaxSum += entry._avg.tmax;
-        reformattedData[createdAt].tminSum += entry._avg.tmin;
-        reformattedData[createdAt].humiditySum += entry._avg.humidity;
-        reformattedData[createdAt].count++;
+        reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
+        reformattedData[createdAt]!.tminSum += entry._avg.tmin;
+        reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
+        reformattedData[createdAt]!.count++;
       }
     }
 
@@ -180,9 +213,9 @@ const Home: NextPage = () => {
     const result: Result = {};
     for (const createdAt in reformattedData) {
       const avgEntry = reformattedData[createdAt];
-      const avgTmax = avgEntry.tmaxSum / avgEntry.count;
-      const avgTmin = avgEntry.tminSum / avgEntry.count;
-      const avgHumidity = avgEntry.humiditySum / avgEntry.count;
+      const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
+      const avgTmin = avgEntry!.tminSum / avgEntry!.count;
+      const avgHumidity = avgEntry!.humiditySum / avgEntry!.count;
 
       result[createdAt] = {
         avgTmax,
@@ -193,8 +226,9 @@ const Home: NextPage = () => {
 
     return result;
   }
-  function calculateAveragesDate<t>(data: t) {
-    const reformattedData = {};
+  
+  function calculateAveragesDate(data: any) {
+    const reformattedData:avgRes = {};
 
     // Reformat the createdAt date and calculate averages
     for (const key in data) {
@@ -211,10 +245,10 @@ const Home: NextPage = () => {
             count: 0,
           };
         }
-        reformattedData[createdAt].tmaxSum += entry._avg.tmax;
-        reformattedData[createdAt].tminSum += entry._avg.tmin;
-        reformattedData[createdAt].humiditySum += entry._avg.humidity;
-        reformattedData[createdAt].count++;
+        reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
+        reformattedData[createdAt]!.tminSum += entry._avg.tmin;
+        reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
+        reformattedData[createdAt]!.count++;
       }
     }
 
@@ -222,9 +256,9 @@ const Home: NextPage = () => {
     const result: Result = {};
     for (const createdAt in reformattedData) {
       const avgEntry = reformattedData[createdAt];
-      const avgTmax = avgEntry.tmaxSum / avgEntry.count;
-      const avgTmin = avgEntry.tminSum / avgEntry.count;
-      const avgHumidity = avgEntry.humiditySum / avgEntry.count;
+      const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
+      const avgTmin = avgEntry!.tminSum / avgEntry!.count;
+      const avgHumidity = avgEntry!.humiditySum / avgEntry!.count;
 
       result[createdAt] = {
         avgTmax,
@@ -247,37 +281,7 @@ const Home: NextPage = () => {
   // const { data: dataSinoptik } = api.providers.getDaliVali.useQuery({ cityId: city });
   // const { data: dataFreemeteo } = api.providers.getDaliVali.useQuery({ cityId: city });
 
-  const chartData = {
-    labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
-    datasets: [
-      {
-        label: "Tmax",
-        data: dataFdateDaliVali
-          ?.map((sumTmax) => sumTmax.averageTmax)
-          .reverse(),
-        fill: false,
-        borderColor: "rgb(255, 69, 0)",
-        tention: 0.7,
-        pointBackgroundColor: "red", // Color of the data points
-        pointBorderColor: "red", // Border color of the data points
-        pointRadius: 5, // Radius of the data points when not hovered
-        pointHoverRadius: 7, // Radius of the data points when hovered
-      },
-      {
-        label: "Tmin",
-        data: dataFdateDaliVali
-          ?.map((sumTmin) => sumTmin.averageTmin)
-          .reverse(),
-        fill: false,
-        borderColor: "rgb(75, 192, 192)",
-        tention: 0.7,
-        pointBackgroundColor: "blue", // Color of the data points
-        pointBorderColor: "blue", // Border color of the data points
-        pointRadius: 5, // Radius of the data points when not hovered
-        pointHoverRadius: 7, // Radius of the data points when hovered
-      },
-    ],
-  };
+  
   const chartOptions = {
     plugins: {
       legend: {
@@ -293,7 +297,7 @@ const Home: NextPage = () => {
       datalabels: {
         display: true,
         color: "black",
-        formatter: function (value) {
+        formatter: function (value: any) {
           return value; // Display the data value directly on the point
         },
       },
@@ -310,7 +314,7 @@ const Home: NextPage = () => {
           label: "Tmax",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmax),
+            ?.map((date) => data[date]?.avgTmax),
           fill: false,
           borderColor: "rgb(255, 69, 0)",
           tention: 0.7,
@@ -323,7 +327,7 @@ const Home: NextPage = () => {
           label: "Tmin",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmin),
+            ?.map((date) => data[date]?.avgTmin),
           fill: false,
           borderColor: "rgb(75, 192, 192)",
           tention: 0.7,
@@ -346,7 +350,7 @@ const Home: NextPage = () => {
           label: "Tmax",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmax),
+            ?.map((date) => data[date]?.avgTmax),
           fill: false,
           borderColor: "rgb(255, 69, 0)",
           tention: 0.7,
@@ -359,7 +363,7 @@ const Home: NextPage = () => {
           label: "Tmin",
           data: Object.keys(data)
             .sort()
-            ?.map((date) => data[date].avgTmin),
+            ?.map((date) => data[date]?.avgTmin),
           fill: false,
           borderColor: "rgb(75, 192, 192)",
           tention: 0.7,
@@ -436,7 +440,7 @@ const Home: NextPage = () => {
           )}
           {city && (
             <div className="border-slate-400 m-4 max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer ">
-              <div className="flex-row justify-center p-4">
+              {/* <div className="flex-row justify-center p-4">
                 Today from the past week
                 <p> current time: {dataDaliValiForNextWeek?.length}</p>
                 <p>
@@ -452,11 +456,11 @@ const Home: NextPage = () => {
                   Thum: {Math.round(SumAvg(dataDaliValiForNextWeek).avgThum)}
                 </p>
                 <p>
-                  {/* {dataDaliValiForToday?.map(({ createdAt, forecastDay }) =>
+                  {dataDaliValiForToday?.map(({ createdAt, forecastDay }) =>
               forecastDay.getDate()
-            )} */}
+            )}
                 </p>
-              </div>
+              </div> */}
               {/* {SumAvg(dataDaliValiForToday).avgTmax} */}
               {/* <div>
                 <h1>Weather Averages</h1>
