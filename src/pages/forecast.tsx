@@ -398,12 +398,7 @@ const Home: NextPage = () => {
             >
               Forecast
             </a>
-            <a
-              className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3"
-              href="dalivali"
-            >
-              DaliVali
-            </a>
+            
             <div className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3">
               {!user.isSignedIn && (
                 <div className="flex justify-center">
