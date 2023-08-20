@@ -485,7 +485,7 @@ const Home: NextPage = () => {
 
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="text-white">From DaliVali for Today</p>
+                  <p className="text-white">From DaliVali for next week</p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
@@ -498,7 +498,7 @@ const Home: NextPage = () => {
                     {Object.keys(averageDataForNextWeekDali).map((date) => (
                       <div className="mx-auto max-w-md rounded-lg bg-white p-6 shadow-md">
                         <h2 className="mb-4 text-xl font-semibold">
-                          From: {date}
+                          For: {date}
                         </h2>
                         <p className="text-gray-600">
                           Max Temp:{" "}
@@ -530,7 +530,7 @@ const Home: NextPage = () => {
               {/* cards for freemeteo ----------------------------------------------------- */}
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="text-white">From Freemeteo for Today</p>
+                  <p className="text-white">From Freemeteo for next week</p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
@@ -543,7 +543,7 @@ const Home: NextPage = () => {
                     {Object.keys(averageDataForNextWeekFree).map((date) => (
                       <div className="mx-auto max-w-lg rounded-lg bg-white p-6 shadow-md">
                         <h2 className="mb-4 text-xl font-semibold">
-                          From: {date}
+                          For: {date}
                         </h2>
                         <p className="text-gray-600">
                           Max Temp:{" "}
@@ -571,7 +571,7 @@ const Home: NextPage = () => {
               {/* ---------------------------------------------- */}
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="text-white">From Sinoptik for Today</p>
+                  <p className="text-white">From Sinoptik for next week</p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
@@ -584,7 +584,7 @@ const Home: NextPage = () => {
                     {Object.keys(averageDataForNextWeekSino).map((date) => (
                       <div className="mx-auto max-w-lg rounded-lg bg-white p-6 shadow-md">
                         <h2 className="mb-4 text-xl font-semibold">
-                          From: {date}
+                          For: {date}
                         </h2>
                         <p className="text-gray-600">
                           Max Temp:{" "}
