@@ -35,7 +35,7 @@ ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Legend);
 const TABLE_HEAD = ["From Date", "Tmax avg", "Tmin avg", "CreatedAt"];
 
 const Home: NextPage = () => {
-  const user = useUser();
+  //const user = useUser();
 
   const { data: dataCities } = api.cities.getAll.useQuery();
 
@@ -399,14 +399,14 @@ const Home: NextPage = () => {
               Forecast
             </a>
             
-            <div className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3">
+            {/* <div className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3">
               {!user.isSignedIn && (
                 <div className="flex justify-center">
                   <SignInButton />
                 </div>
               )}
               {user.isSignedIn && <SignOutButton />}
-            </div>
+            </div> */}
           </nav>
         </div>
       </section>
