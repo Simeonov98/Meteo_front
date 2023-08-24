@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  relationMode      = "prisma"
 }
 
 model Example {
@@ -49,6 +50,9 @@ model Dalivali {
   createdAt   DateTime @default(now())
   cityId      Int
   imageId     Int
+  image       Image    @relation(fields: [imageId], references: [id])
+
+  @@index([imageId])
 }
 
 model Freemeteo {
@@ -63,12 +67,18 @@ model Freemeteo {
   createdAt   DateTime @default(now())
   cityId      Int
   imageId     Int
+  image       Image    @relation(fields: [imageId], references: [id])
+
+  @@index([imageId])
 }
 
 model Image {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-  src  Bytes  @db.Blob
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  src       Bytes       @db.Blob
+  dalivali  Dalivali[]
+  freemeteo Freemeteo[]
+  sinoptik  Sinoptik[]
 }
 
 model Session {
@@ -90,6 +100,9 @@ model Sinoptik {
   createdAt    DateTime @default(now())
   cityId       Int
   imageId      Int
+  image        Image    @relation(fields: [imageId], references: [id])
+
+  @@index([imageId])
 }
 
 model Snapshot {

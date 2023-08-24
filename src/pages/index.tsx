@@ -24,7 +24,7 @@ import {
 import { type NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { api } from "~/utils/api";
 // import DaliVali from "./dalivali";
 import { Chart } from "chart.js/dist";
@@ -34,17 +34,21 @@ import { format } from "date-fns";
 import { create } from "domain";
 import { get } from "http";
 import { group } from "console";
+import { router } from "@trpc/server";
+import { Router, useRouter } from "next/router";
+import { useQuery } from "@tanstack/react-query";
+import { exit } from "process";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Legend);
 
-const TABLE_HEAD = ["From Date", "Tmax avg", "Tmin avg", "CreatedAt"];
+//const TABLE_HEAD = ["From Date", "Tmax avg", "Tmin avg", "CreatedAt"];
 
 const Home: NextPage = () => {
   //const user = useUser();
 
   const { data: dataCities } = api.cities.getAll.useQuery();
 
-  const dataProviders: string[] = ["DaliVali", "Sinoptik", "Freemeteo"];
+  //const dataProviders: string[] = ["DaliVali", "Sinoptik", "Freemeteo"];
   const datee: Date = new Date();
   datee.setHours(0, 0, 0, 0);
 
@@ -66,27 +70,27 @@ const Home: NextPage = () => {
   }
   // const currDate: Date = new Date(formatDate(new Date()));
 
-  const [currentDate, setCurrentDate] = useState(new Date());
+  //const [currentDate, setCurrentDate] = useState(new Date());
 
-  useEffect(() => {
+  //useEffect(() => {
     // This effect will run once when the component is mounted.
-    setCurrentDate(new Date(formatDate(new Date())));
-  }, []);
+   // setCurrentDate(new Date(formatDate(new Date())));
+ // }, []);
 
   const [city, setCity] = useState<number>();
 
-  const [fdate, setFdate] = useState<Date>();
+ // const [fdate, setFdate] = useState<Date>();
 
-  const [provider, setProvider] = useState<string>();
+  //const [provider, setProvider] = useState<string>();
 
   // const { data: dataFdateDaliVali } = api.providers.getForecastDate.useQuery({
   //   cityId: city,
   //   date: currentDate,
   // });
 
-  const { data: dataDaliVali } = api.providers.getDaliVali.useQuery({
-    cityId: city,
-  });
+  // const { data: dataDaliVali } = api.providers.getDaliVali.useQuery({
+  //   cityId: city,
+  // });
 
   // const { data: dataSinoptik } = api.providers.getDaliVali.useQuery({ cityId: city });
   // const { data: dataFreemeteo } = api.providers.getDaliVali.useQuery({ cityId: city });
@@ -147,7 +151,7 @@ const Home: NextPage = () => {
       })[]
     }
   );
-  console.log(groupedByCreateAtDali);
+  //console.log(JSON.stringify(dataDaliValiForToday));
   //-------------------------------------------
   const groupedByCreateAtFree = dataFreemeteoForToday?.reduce(
     (groups, item) => {
@@ -242,11 +246,24 @@ const Home: NextPage = () => {
     avgTmin:number,
     avgHumidity:number,
   };}
+  type ResultF ={ [key: string] : {
+    avgTmax:number,
+    avgTmin:number,
+    //avgHumidity:number,
+  };}
   type avgRes = {
     [key: string]: {
       tmaxSum: number;
       tminSum: number;
       humiditySum: number;
+      count: number;
+    };
+  };
+  type avgResF = {
+    [key: string]: {
+      tmaxSum: number;
+      tminSum: number;
+      
       count: number;
     };
   };
@@ -290,10 +307,52 @@ const Home: NextPage = () => {
 
     return result;
   }
+  function calculateAveragesF(data:any) {
+    const reformattedData: avgResF = {};
+
+    // Reformat the createdAt date and calculate averages
+    for (const key in data) {
+      const entries = data[key];
+      for (const entry of entries) {
+        const createdAt = new Date(entry.createdAt).toISOString().slice(0, 10); // Extract date part
+        if (!reformattedData[createdAt]) {
+          reformattedData[createdAt] = {
+            tmaxSum: 0,
+            tminSum: 0,
+            //humiditySum: 0,
+            count: 0,
+          };
+        }
+        if(entry._avg.tmax!==null){
+        reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
+        reformattedData[createdAt]!.tminSum += entry._avg.tmin;
+        //reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
+        reformattedData[createdAt]!.count++;
+        }
+      }
+    }
+
+    // Calculate averages and format output
+    const result:ResultF = {};
+    for (const createdAt in reformattedData) {
+      const avgEntry = reformattedData[createdAt];
+      const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
+      const avgTmin = avgEntry!.tminSum / avgEntry!.count;
+      //const avgHumidity = avgEntry!.humiditySum / avgEntry!.count;
+
+      result[createdAt] = {
+        avgTmax,
+        avgTmin,
+        //avgHumidity,
+      };
+    }
+
+    return result;
+  }
   const averageDataForTodayDali = calculateAverages(groupedByCreateAtDali);
-  const averageDataForTodayFree = calculateAverages(groupedByCreateAtFree);
+  const averageDataForTodayFree = calculateAveragesF(groupedByCreateAtFree);
   const averageDataForTodaySino = calculateAverages(groupedByCreateAtSino);
-  console.log(averageDataForTodayDali);
+  //console.log(averageDataForTodayDali);
 
   //---------------------func to do the same
 
@@ -356,21 +415,71 @@ const Home: NextPage = () => {
       ],
     };
   };
+  function chartfuncF(data:ResultF){
+    return {
+      labels: Object.keys(data)
+        .sort()
+        .map((forecastDay) => forecastDay.toString()),
+      // labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
+      datasets: [
+        {
+          label: "Tmax",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmax),
+          fill: false,
+          borderColor: "rgb(255, 69, 0)",
+          tention: 0.7,
+          pointBackgroundColor: "red", // Color of the data points
+          pointBorderColor: "red", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+        {
+          label: "Tmin",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmin),
+          fill: false,
+          borderColor: "rgb(75, 192, 192)",
+          tention: 0.7,
+          pointBackgroundColor: "blue", // Color of the data points
+          pointBorderColor: "blue", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+      ],
+    };
+  };
 
-  const currentrrDate = new Date();
+  
 
   // Format the current date as a datetime string using date-fns
-  const formattedDateTime = format(
-    currentrrDate,
-    "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
-  );
+  //const formattedDateTime = format(
+    //currentrrDate,
+    //"yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
+  //);
+  //const router=useRouter()
 
-  //////////
+  //const [dateForDetailed, setDateForDetailed] = useState(new Date())
 
+  //const {data: queryData} =  api.providers.getCertainDateDali.useQuery({ cityId: city, date: dateForDetailed })
+  
+  // const fetchForDetailed = async (fromButton: any, city: string) => {
+    
+  //   setDateForDetailed(new Date(fromButton))
+  //   router.push({
+  //     pathname:"/detailed",
+  //     query:{data: [JSON.stringify(dateForDetailed),JSON.stringify(city)]}
+  //     //query:{data:[JSON.stringify(dateForDetailed),JSON.stringify(city.toString())]}
+  //   })
+  // }
+  
+  /////////
   return (
     <>
       <Head>
-        <title>Create T3 App</title>
+        <title>MergeMeteo</title>
         <meta name="description" content="Generated by create-t3-app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -478,6 +587,7 @@ const Home: NextPage = () => {
                     {Object.keys(averageDataForTodayDali)
                       .sort()
                       .map((date) => (
+                        
                         <div className="rounded-lg bg-white p-6 shadow-md">
                           <h2 className="mb-4 text-xl font-semibold">
                             From: {date}
@@ -500,12 +610,18 @@ const Home: NextPage = () => {
                             %
                           </p>
                           <div className="mt-4">
-                            <a
-                              href="#"
-                              className="text-blue-500 hover:underline"
-                            >
-                              Read more
-                            </a>
+                            <Link
+                              //onClick={() => fetchForDetailed(date, city.toString())}
+                              className="text-blue-500 hover:underline" href={{
+                                pathname:'/detailed',
+                                query:{
+                                  date: date,
+                                  cityId: city,
+                                  provider: 'dali'
+                                }
+                              }}                            >
+                              Details about this day
+                            </Link>
                           </div>
                         </div>
                       ))}
@@ -519,7 +635,7 @@ const Home: NextPage = () => {
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
-                    <Line data={chartfunc(averageDataForTodayFree)} options={chartOptions}></Line>
+                    <Line data={chartfuncF(averageDataForTodayFree)} options={chartOptions}></Line>
                   </div>
                   <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
                     {Object.keys(averageDataForTodayFree).map((date) => (
@@ -539,9 +655,18 @@ const Home: NextPage = () => {
                   Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
                 </p> */}
                         <div className="mt-4">
-                          <a href="#" className="text-blue-500 hover:underline">
-                            Read more
-                          </a>
+                        <Link
+                              //onClick={() => fetchForDetailed(date, city.toString())}
+                              className="text-blue-500 hover:underline" href={{
+                                pathname:'/detailed',
+                                query:{
+                                  date: date,
+                                  cityId: city,
+                                  provider: 'free'
+                                }
+                              }}                            >
+                              Details about this day
+                            </Link>
                         </div>
                       </div>
                     ))}
@@ -579,12 +704,18 @@ const Home: NextPage = () => {
                   Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
                 </p> */}
                           <div className="mt-4">
-                            <a
-                              href="#"
-                              className="text-blue-500 hover:underline"
-                            >
-                              Read more
-                            </a>
+                          <Link
+                              //onClick={() => fetchForDetailed(date, city.toString())}
+                              className="text-blue-500 hover:underline" href={{
+                                pathname:'/detailed',
+                                query:{
+                                  date: date,
+                                  cityId: city,
+                                  provider: 'sino'
+                                }
+                              }}                            >
+                              Details about this day
+                            </Link>
                           </div>
                         </div>
                       ))}

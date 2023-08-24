@@ -1,4 +1,5 @@
 import { clientCallTypeToProcedureType } from "@trpc/client";
+import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 import { object, z } from "zod";
 // import DaliVali from "~/pages/dalivali";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -26,26 +27,26 @@ export const providersRouter = createTRPCRouter({
         take: 10,
       });
     }),
-  getLast10Days: publicProcedure
-    .input(z.object({ cityId: z.number().optional() }))
-    .query(({ ctx, input }) => {
-      if (!input.cityId) return [];
-      return ctx.prisma.dalivali.groupBy({
-        by: ["forecastDay", "createdAt"],
-        where: {
-          cityId: {
-            equals: input.cityId,
-          },
-          forecastDay: {
-            gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          },
-        },
-        orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }],
-        _avg: { tmax: true, tmin: true },
+  // getLast10Days: publicProcedure
+  //   .input(z.object({ cityId: z.number().optional() }))
+  //   .query(({ ctx, input }) => {
+  //     if (!input.cityId) return [];
+  //     return ctx.prisma.dalivali.groupBy({
+  //       by: ["forecastDay", "createdAt"],
+  //       where: {
+  //         cityId: {
+  //           equals: input.cityId,
+  //         },
+  //         forecastDay: {
+  //           gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  //         },
+  //       },
+  //       orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }],
+  //       _avg: { tmax: true, tmin: true },
 
         
-      });
-    }),
+  //     });
+  //   }),
     getForTodayDaysDali: publicProcedure.input(z.object({cityId: z.number().optional()})).query(async ({ ctx,input }) => {
       if (!input.cityId) return [];
       return ctx.prisma.dalivali.groupBy({
@@ -173,6 +174,80 @@ export const providersRouter = createTRPCRouter({
         orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }]
         
       });
+    }),
+    getCertainDateDali: publicProcedure.input(z.object({cityId: z.number().optional(),date:z.date().optional()})).query(async({ctx,input})=>{
+      if(!input.cityId) return [];
+      if(!input.date) return [];
+      const result = await ctx.prisma.dalivali.findMany({
+        include:{
+          image:true
+        },
+        where:{
+          cityId:{
+            equals: input.cityId,
+          },
+          forecastDay:{
+            equals: input.date.toISOString() /// some formatting
+          },
+          
+        },
+        
+        
+        orderBy: [{createdAt:"desc"},{forecastDay:"desc"}]
+      })
+      
+      return result.map((obj)=>({
+        ...obj,image:{...obj.image,src:obj.image.src.toString('base64')}
+      }));
+    }),
+    getCertainDateSino: publicProcedure.input(z.object({cityId: z.number().optional(),date:z.date().optional()})).query(async({ctx,input})=>{
+      if(!input.cityId) return [];
+      if(!input.date) return [];
+      const result = await ctx.prisma.sinoptik.findMany({
+        include:{
+          image:true
+        },
+        where:{
+          cityId:{
+            equals: input.cityId,
+          },
+          forecastDate:{
+            equals: input.date.toISOString() /// some formatting
+          },
+          
+          
+        },
+        
+        
+        orderBy: [{createdAt:"desc"},{forecastDate:"desc"}]
+      })
+      return result.map((obj)=>({
+        ...obj,image:{...obj.image,src:obj.image.src.toString('base64')}
+      }));;
+    }),
+    getCertainDateFree: publicProcedure.input(z.object({cityId: z.number().optional(),date:z.date().optional()})).query(async({ctx,input})=>{
+      if(!input.cityId) return [];
+      if(!input.date) return [];
+      const result = await ctx.prisma.dalivali.findMany({
+        include:{
+          image:true
+        },
+        where:{
+          cityId:{
+            equals: input.cityId,
+          },
+          forecastDay:{
+            equals: input.date.toISOString() /// some formatting
+          },
+          
+        },
+        
+        
+        orderBy: [{createdAt:"desc"},{forecastDay:"desc"}]
+      })
+      return result.map((obj)=>({
+        ...obj,image:{...obj.image,src:obj.image.src.toString('base64')}
+      }));
     }),
     
   
