@@ -533,7 +533,7 @@ const Home: NextPage = () => {
             <div className="flex flex-col p-4 justify-center rounded-lg border-2 border-solid bg-thirdLayer">
               <p className="flex justify-center font-mono font-semibold text-xl">Please select a city</p>
               <div className="flex p-4 m-4 justify-center rounded-lg border-2 border-solid bg-gray-400">
-                <p>After selecting a city, you will be presented with information about the past week from three different weather forecast sources.</p>
+                <p>After selecting a city, you will be presented with information about the <span className="underline">past week</span> from three different weather forecast sources.</p>
               </div>
             </div>
             
