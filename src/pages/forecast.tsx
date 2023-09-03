@@ -87,11 +87,12 @@ const Home: NextPage = () => {
   });
   const { data: dataDaliValiForNextWeek } =
     api.providers.getForNextWeekDali.useQuery({ cityId: city });
-  console.log(dataDaliValiForNextWeek);
+  //console.log(dataDaliValiForNextWeek);
   const { data: dataSinoptikForNextWeek } =
     api.providers.getForNextWeekSino.useQuery({ cityId: city });
   const { data: dataFreemeteoForNextWeek } =
     api.providers.getForNextWeekFree.useQuery({ cityId: city });
+  console.log(dataFreemeteoForNextWeek)
   function SumAvg(data:any[]): {
     avgTmax: number;
     avgTmin: number;
@@ -292,7 +293,7 @@ const Home: NextPage = () => {
     for (const key in data) {
       const entries = data[key];
       for (const entry of entries) {
-        const createdAt = new Date(entry.createdAt).toISOString().slice(0, 10); // Extract date part
+        const createdAt = new Date(entry.forecastDay).toISOString().slice(0, 10); // Extract date part
         if (!reformattedData[createdAt]) {
           reformattedData[createdAt] = {
             tmaxSum: 0,
