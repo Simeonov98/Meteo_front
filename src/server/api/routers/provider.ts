@@ -249,7 +249,98 @@ export const providersRouter = createTRPCRouter({
         ...obj,image:{...obj.image,src:obj.image.src.toString('base64')}
       }));
     }),
-    
+    getForErrorDaysDali: publicProcedure.input(z.object({cityId: z.number().optional()})).query(async ({ ctx,input }) => {
+      if (!input.cityId) return [];
+      return ctx.prisma.dalivali.groupBy({
+        by:['createdAt','forecastDay','tmax','tmin'],
+        where: {
+          forecastDay: {
+            equals: new Date(Date.now())
+              .toISOString()
+              .split("T")[0]
+              ?.concat("T00:00:00.000Z"),
+          },
+          cityId:{
+            equals:input.cityId
+          }
+          
+        },
+        orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }]
+        
+      });
+    }),
+    getForTodayDaysDaliLatest: publicProcedure.input(z.object({cityId: z.number().optional()})).query(async ({ ctx,input }) => {
+      if (!input.cityId) return [];
+      return ctx.prisma.dalivali.groupBy({
+        by:['forecastDay','createdAt',],
+        _avg: { tmax: true, tmin: true, humidity:true },
+        where: {
+          forecastDay: {
+            equals: new Date(Date.now())
+              .toISOString()
+              .split("T")[0]
+              ?.concat("T00:00:00.000Z"),
+          },
+          cityId:{
+            equals:input.cityId
+          },
+          
+          
+        },
+        orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }],
+        take: 1
+        
+      });
+    }),
+    getForTodayDaysSinoLatest: publicProcedure.input(z.object({cityId: z.number().optional()})).query(async ({ ctx,input }) => {
+      if (!input.cityId) return [];
+      return ctx.prisma.sinoptik.groupBy({
+        by:['forecastDate','createdAt',],
+        _avg: { tmax: true, tmin: true },
+        where: {
+          forecastDate: {
+            equals: new Date(Date.now())
+              .toISOString()
+              .split("T")[0]
+              ?.concat("T00:00:00.000Z"),
+          },
+          cityId:{
+            equals:input.cityId
+          },
+          
+          
+        },
+        orderBy: [{ createdAt: "desc" }, { forecastDate: "desc" }],
+        take: 1
+        
+      });
+    }),
+    getForTodayDaysFreeLatest: publicProcedure.input(z.object({cityId: z.number().optional()})).query(async ({ ctx,input }) => {
+      if (!input.cityId) return [];
+      return ctx.prisma.freemeteo.groupBy({
+        by:['forecastDay','createdAt',],
+        _avg: { tmax: true, tmin: true, },
+        where: {
+          forecastDay: {
+            equals: new Date(Date.now())
+              .toISOString()
+              .split("T")[0]
+              ?.concat("T00:00:00.000Z"),
+          },
+          tmax:{
+            not: null ,
+          },
+          cityId:{
+            equals:input.cityId
+          },
+          
+          
+        },
+        orderBy: [{ createdAt: "desc" }, { forecastDay: "desc" }],
+        take: 1
+        
+      });
+    }),
   
   // getForecastDate: publicProcedure
   //   .input(

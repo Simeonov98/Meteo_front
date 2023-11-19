@@ -20,6 +20,7 @@ import {
   Tab,
   TabPanel,
   Button,
+  ListItem,
 } from "@material-tailwind/react";
 import { type NextPage } from "next";
 import Head from "next/head";
@@ -28,7 +29,7 @@ import { SetStateAction, useEffect, useState } from "react";
 import { api } from "~/utils/api";
 // import DaliVali from "./dalivali";
 import { Chart } from "chart.js/dist";
-import { date } from "zod";
+import { array, date, symbol } from "zod";
 
 import { format } from "date-fns";
 import { create } from "domain";
@@ -38,6 +39,10 @@ import { router } from "@trpc/server";
 import { Router, useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
 import { exit } from "process";
+import { ObjectType } from "@clerk/nextjs/dist/types/server";
+import { keys, shift } from ".eslintrc.cjs";
+import { ar } from "date-fns/locale";
+import { json } from "stream/consumers";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Legend);
 
@@ -73,13 +78,13 @@ const Home: NextPage = () => {
   //const [currentDate, setCurrentDate] = useState(new Date());
 
   //useEffect(() => {
-    // This effect will run once when the component is mounted.
-   // setCurrentDate(new Date(formatDate(new Date())));
- // }, []);
+  // This effect will run once when the component is mounted.
+  // setCurrentDate(new Date(formatDate(new Date())));
+  // }, []);
 
   const [city, setCity] = useState<number>();
 
- // const [fdate, setFdate] = useState<Date>();
+  // const [fdate, setFdate] = useState<Date>();
 
   //const [provider, setProvider] = useState<string>();
 
@@ -102,11 +107,39 @@ const Home: NextPage = () => {
     api.providers.getForTodayDaysFree.useQuery({ cityId: city });
   const { data: dataSoinoptikForToday } =
     api.providers.getForTodayDaysSino.useQuery({ cityId: city });
-
-  function SumAvg(data: any[]): { avgTmax: number; avgTmin: number; avgThum: number } {
-    const sumTmax = data?.reduce((acc: any, obj: { _avg: { tmax: any; }; }) => acc + obj._avg.tmax, 0);
-    const sumTmin = data?.reduce((acc: any, obj: { _avg: { tmin: any; }; }) => acc + obj._avg.tmin, 0);
-    const sumThum = data?.reduce((acc: any, obj: { _avg: { humidity: any; }; }) => acc + obj._avg.humidity, 0);
+  const { data: LatestDali } = api.providers.getForTodayDaysDaliLatest.useQuery(
+    {
+      cityId: city,
+    }
+  );
+  const { data: LatestSino } = api.providers.getForTodayDaysSinoLatest.useQuery(
+    {
+      cityId: city,
+    }
+  );
+  const { data: LatestFree } = api.providers.getForTodayDaysFreeLatest.useQuery(
+    {
+      cityId: city,
+    }
+  );
+  //console.log(ErrorDataDali)
+  function SumAvg(data: any[]): {
+    avgTmax: number;
+    avgTmin: number;
+    avgThum: number;
+  } {
+    const sumTmax = data?.reduce(
+      (acc: any, obj: { _avg: { tmax: any } }) => acc + obj._avg.tmax,
+      0
+    );
+    const sumTmin = data?.reduce(
+      (acc: any, obj: { _avg: { tmin: any } }) => acc + obj._avg.tmin,
+      0
+    );
+    const sumThum = data?.reduce(
+      (acc: any, obj: { _avg: { humidity: any } }) => acc + obj._avg.humidity,
+      0
+    );
     const avgTmax = sumTmax / data.length;
     const avgTmin = sumTmin / data.length;
     const avgThum = sumThum / data.length;
@@ -148,10 +181,10 @@ const Home: NextPage = () => {
           tmin: number | null;
           humidity: number | null;
         };
-      })[]
+      })[];
     }
   );
-  //console.log(JSON.stringify(dataDaliValiForToday));
+  // console.log(groupedByCreateAtDali)
   //-------------------------------------------
   const groupedByCreateAtFree = dataFreemeteoForToday?.reduce(
     (groups, item) => {
@@ -170,9 +203,8 @@ const Home: NextPage = () => {
         _avg: {
           tmax: number | null;
           tmin: number | null;
-          
         };
-      })[]
+      })[];
     }
   );
   const groupedByCreateAtSino = dataSoinoptikForToday?.reduce(
@@ -192,9 +224,8 @@ const Home: NextPage = () => {
         _avg: {
           tmax: number | null;
           tmin: number | null;
-         
         };
-      })[]
+      })[];
     }
   );
   //----------------------------------- groups for the func
@@ -240,17 +271,381 @@ const Home: NextPage = () => {
 
   // console.log(averagesByCreatedAt);
   //------------------------------ from line to line this returns the averages for each day
+  function groupBy(arr: any[], property: string) {
+    return arr.reduce(function (memo, x) {
+      if (!memo[x[property]]) {
+        memo[x[property]] = [];
+      }
+      memo[x[property]].push(x);
+      return memo;
+    }, {});
+  }
+  // function shit() {
+  //   if (groupedByCreateAtDali) {
+  //     // Iterate over the keys (which are numbers)
+  //     //console.log(new Date().getDate() , new Date().toTimeString())
+  //     for (const key in groupedByCreateAtDali) {
+  //       if (groupedByCreateAtDali.hasOwnProperty(key)) {
+  //         const arrayOfObjects = groupedByCreateAtDali[key];
+  //         // console.log(arrayOfObjects?.length)
+  //         const grouped = groupBy(arrayOfObjects, "forecastDay");
+  //         //console.log(grouped)
+  //         //console.log(JSON.stringify(grouped,null,2))
+  //         //console.log(grouped['undefined'][0]['createdAt'])
+  //       }
+  //     }
+  //   }
+  // }
 
-  type Result ={ [key: string] : {
-    avgTmax:number,
-    avgTmin:number,
-    avgHumidity:number,
-  };}
-  type ResultF ={ [key: string] : {
-    avgTmax:number,
-    avgTmin:number,
-    //avgHumidity:number,
-  };}
+  //shit();
+  //const latestDaliTmax=LatestDali![0]?._avg.tmax
+  // const latestDaliTmin=LatestDali![0]?._avg.tmin
+  // const latestDalihumid=LatestDali![0]?._avg.humidity
+  function calculateMAE(predicted: number, actual: number) {
+    return Math.abs(predicted - actual);
+  }
+  function calcMaeDali() {
+    if (groupedByCreateAtDali) {
+      // console.log(groupedByCreateAtDali)
+      const latestDaliTmax = LatestDali![0]?._avg.tmax;
+      const latestDaliTmin = LatestDali![0]?._avg.tmin;
+      const latestDalihumid = LatestDali![0]?._avg.humidity;
+      //  console.log(latestDaliTmax)
+      const arrRes: {
+        Tmax: number;
+        Tmin: number;
+        Humidity: number;
+        Date: Date;
+      }[] = [];
+      const rezrez: {
+        maeTmax: number;
+        maeTmin: number;
+        date: string;
+      }[] = [];
+      for (const key in groupedByCreateAtDali) {
+        if (groupedByCreateAtDali.hasOwnProperty(key)) {
+          const arrayOfObjects = groupedByCreateAtDali[key];
+          //console.log(arrayOfObjects)
+          // for(let i=0;i < arrayOfObjects!.length;i++){
+          //   console.log(`Element ${i} of array ${key}:`, arrayOfObjects![i]);
+          // }
+
+          arrayOfObjects?.forEach(function (item, index) {
+            const curr = item.createdAt.getDate();
+
+            let accObj = {
+              Tmax: 0,
+              Tmin: 0,
+              Humidity: 0,
+              Date: new Date(),
+            };
+
+            if (curr == arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = +item._avg.tmax!;
+              accObj.Tmin = +item._avg.tmin!;
+              accObj.Humidity = +item._avg.humidity!;
+              accObj.Date = item.createdAt;
+              arrRes.push(accObj);
+            }
+            if (curr != arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = 0;
+              accObj.Tmin = 0;
+              accObj.Humidity = 0;
+              accObj.Date = item.createdAt;
+            }
+          });
+        }
+      }
+      //console.log(arrRes);
+      const objByDate: { [key: string]: typeof arrRes }[] = [];
+      arrRes.forEach((obj) => {
+        const dateString = obj.Date.toISOString().split("T")[0];
+        if (!objByDate[dateString!]) {
+          objByDate[dateString!] = [];
+        }
+
+        objByDate[dateString]?.push(obj);
+      });
+      //console.log(objByDate);
+
+      for (const date in objByDate) {
+        if (Object.prototype.hasOwnProperty.call(objByDate, date)) {
+          let dailyMax = 0;
+          let dailyMin = 0;
+          let rezzz = {
+            maeTmax: 0,
+            maeTmin: 0,
+            date: "",
+          };
+          const smsh = objByDate[date];
+          smsh.forEach((obj: any) => {
+            const predictTmax = obj.Tmax;
+            const predictTmin = obj.Tmin;
+            const maeTmax = calculateMAE(predictTmax, latestDaliTmax!);
+            const maeTmin = calculateMAE(predictTmin, latestDaliTmin!);
+            dailyMax += maeTmax;
+            dailyMin += maeTmin;
+          });
+          const avgMaeMax = dailyMax / smsh.length;
+          const avgMaeMin = dailyMin / smsh.length;
+          rezzz.maeTmax = avgMaeMax;
+          rezzz.maeTmin = avgMaeMin;
+          rezzz.date = date;
+          //console.log(avgMaeMax,avgMaeMin,date,latestDaliTmax)
+          rezrez.push(rezzz);
+        }
+      }
+      //console.log(rezrez)
+      return rezrez;
+    }
+  }
+  function calcMaeFree() {
+    if (groupedByCreateAtFree) {
+      // console.log(groupedByCreateAtDali)
+      const latestFreeTmax = LatestFree![0]?._avg!.tmax;
+      const latestFreeTmin = LatestFree![0]?._avg!.tmin;
+      console.log(LatestFree);
+      const arrRes: {
+        Tmax: number;
+        Tmin: number;
+
+        Date: Date;
+      }[] = [];
+      const rezrez: {
+        maeTmax: number;
+        maeTmin: number;
+        date: string;
+      }[] = [];
+      for (const key in groupedByCreateAtFree) {
+        if (groupedByCreateAtFree.hasOwnProperty(key)) {
+          const arrayOfObjects = groupedByCreateAtFree[key];
+          //console.log(arrayOfObjects)
+          // for(let i=0;i < arrayOfObjects!.length;i++){
+          //   console.log(`Element ${i} of array ${key}:`, arrayOfObjects![i]);
+          // }
+
+          arrayOfObjects?.forEach(function (item, index) {
+            const curr = item.createdAt.getDate();
+
+            let accObj = {
+              Tmax: 0,
+              Tmin: 0,
+
+              Date: new Date(),
+            };
+
+            if (curr == arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = +item._avg.tmax!;
+              accObj.Tmin = +item._avg.tmin!;
+
+              accObj.Date = item.createdAt;
+              arrRes.push(accObj);
+            }
+            if (curr != arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = 0;
+              accObj.Tmin = 0;
+
+              accObj.Date = item.createdAt;
+            }
+          });
+        }
+      }
+      //console.log(arrRes);
+      const objByDate: { [key: string]: typeof arrRes }[] = [];
+      arrRes.forEach((obj) => {
+        const dateString = obj.Date.toISOString().split("T")[0];
+        if (!objByDate[dateString!]) {
+          objByDate[dateString!] = [];
+        }
+
+        objByDate[dateString]?.push(obj);
+      });
+      //console.log(objByDate);
+
+      for (const date in objByDate) {
+        if (Object.prototype.hasOwnProperty.call(objByDate, date)) {
+          let dailyMax = 0;
+          let dailyMin = 0;
+          let rezzz = {
+            maeTmax: 0,
+            maeTmin: 0,
+            date: "",
+          };
+          const smsh = objByDate[date];
+          smsh.forEach((obj: any) => {
+            const predictTmax = obj.Tmax;
+            const predictTmin = obj.Tmin;
+            const maeTmax = calculateMAE(predictTmax, latestFreeTmax!);
+            const maeTmin = calculateMAE(predictTmin, latestFreeTmin!);
+            dailyMax += maeTmax;
+            dailyMin += maeTmin;
+          });
+          const avgMaeMax = dailyMax / smsh.length;
+          const avgMaeMin = dailyMin / smsh.length;
+          rezzz.maeTmax = avgMaeMax;
+          rezzz.maeTmin = avgMaeMin;
+          rezzz.date = date;
+          //console.log(avgMaeMax,avgMaeMin,date,latestDaliTmax)
+          rezrez.push(rezzz);
+        }
+      }
+      //console.log(rezrez)
+      return rezrez;
+    }
+  }
+  function calcMaeSino() {
+    if (groupedByCreateAtSino) {
+      // console.log(groupedByCreateAtDali)
+      const latestSinoTmax = LatestSino![0]?._avg.tmax;
+      const latestSinoTmin = LatestSino![0]?._avg.tmin;
+      //console.log(latestSinoTmax)
+      const arrRes: {
+        Tmax: number;
+        Tmin: number;
+
+        Date: Date;
+      }[] = [];
+      const rezrez: {
+        maeTmax: number;
+        maeTmin: number;
+        date: string;
+      }[] = [];
+      for (const key in groupedByCreateAtSino) {
+        if (groupedByCreateAtSino.hasOwnProperty(key)) {
+          const arrayOfObjects = groupedByCreateAtSino[key];
+          //console.log(arrayOfObjects)
+          // for(let i=0;i < arrayOfObjects!.length;i++){
+          //   console.log(`Element ${i} of array ${key}:`, arrayOfObjects![i]);
+          // }
+
+          arrayOfObjects?.forEach(function (item, index) {
+            const curr = item.createdAt.getDate();
+
+            let accObj = {
+              Tmax: 0,
+              Tmin: 0,
+
+              Date: new Date(),
+            };
+
+            if (curr == arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = +item._avg.tmax!;
+              accObj.Tmin = +item._avg.tmin!;
+
+              accObj.Date = item.createdAt;
+              arrRes.push(accObj);
+            }
+            if (curr != arrayOfObjects[index - 1]?.createdAt.getDate()) {
+              accObj.Tmax = 0;
+              accObj.Tmin = 0;
+
+              accObj.Date = item.createdAt;
+            }
+          });
+        }
+      }
+      //console.log(arrRes);
+      const objByDate: { [key: string]: typeof arrRes }[] = [];
+      arrRes.forEach((obj) => {
+        const dateString = obj.Date.toISOString().split("T")[0];
+        if (!objByDate[dateString!]) {
+          objByDate[dateString!] = [];
+        }
+
+        objByDate[dateString]?.push(obj);
+      });
+      //console.log(objByDate);
+
+      for (const date in objByDate) {
+        if (Object.prototype.hasOwnProperty.call(objByDate, date)) {
+          let dailyMax = 0;
+          let dailyMin = 0;
+          let rezzz = {
+            maeTmax: 0,
+            maeTmin: 0,
+            date: "",
+          };
+          const smsh = objByDate[date];
+          smsh.forEach((obj: any) => {
+            const predictTmax = obj.Tmax;
+            const predictTmin = obj.Tmin;
+            const maeTmax = calculateMAE(predictTmax, latestSinoTmax!);
+            const maeTmin = calculateMAE(predictTmin, latestSinoTmin!);
+            dailyMax += maeTmax;
+            dailyMin += maeTmin;
+          });
+          const avgMaeMax = dailyMax / smsh.length;
+          const avgMaeMin = dailyMin / smsh.length;
+          rezzz.maeTmax = avgMaeMax;
+          rezzz.maeTmin = avgMaeMin;
+          rezzz.date = date;
+          //console.log(avgMaeMax,avgMaeMin,date,latestDaliTmax)
+          rezrez.push(rezzz);
+        }
+      }
+      //console.log(rezrez)  //  console.log(latestFreeTmax)
+
+      return rezrez;
+    }
+  }
+  const someData1 = calcMaeDali();
+  const someData2 = calcMaeFree();
+  const someData3 = calcMaeSino();
+  const DateTrSomeData1 = someData1?.map((elem) => elem.date);
+  const TminTrSomeData1 = someData1?.map((elem) => elem.maeTmin);
+  const TmaxTrSomeData1 = someData1?.map((elem) => elem.maeTmax);
+  const DateTrSomeData2 = someData2?.map((elem) => elem.date);
+  const TminTrSomeData2 = someData2?.map((elem) => elem.maeTmin);
+  const TmaxTrSomeData2 = someData2?.map((elem) => elem.maeTmax);
+  const DateTrSomeData3 = someData3?.map((elem) => elem.date);
+  const TminTrSomeData3 = someData3?.map((elem) => elem.maeTmin);
+  const TmaxTrSomeData3 = someData3?.map((elem) => elem.maeTmax);
+
+  const SD1AvgTmax = TmaxTrSomeData1
+    ? TmaxTrSomeData1.reduce((a, b) => a + b, 0) / TmaxTrSomeData1!.length
+    : 0;
+  const SD2AvgTmax = TmaxTrSomeData2
+    ? TmaxTrSomeData2.reduce((a, b) => a + b, 0) / TmaxTrSomeData2!.length
+    : 0;
+
+  const SD3AvgTmax = TmaxTrSomeData3
+    ? TmaxTrSomeData3.reduce((a, b) => a + b, 0) / TmaxTrSomeData3!.length
+    : 0;
+  const SD1AvgTmin = TminTrSomeData1
+    ? TminTrSomeData1.reduce((a, b) => a + b, 0) / TminTrSomeData1!.length
+    : 0;
+  const SD2AvgTmin = TminTrSomeData2
+    ? TminTrSomeData2.reduce((a, b) => a + b, 0) / TminTrSomeData2!.length
+    : 0;
+  const SD3AvgTmin = TminTrSomeData3
+    ? TminTrSomeData3.reduce((a, b) => a + b, 0) / TminTrSomeData3!.length
+    : 0;
+
+  //  console.log(TmaxTrSomeData2)
+  //  console.log(TminTrSomeData2)
+  // console.log(DatetransformedSomeData)
+  // console.log(TmaxTrSomeData1, TmaxTrSomeData2, TmaxTrSomeData3);
+  // function ArrayAvg(arr: number[] | undefined){
+  //   let i=0, summ=0,ArrayLen = arr.length;
+  //   while (i<ArrayLen){
+  //     summ+=arr[i++];
+  //   }
+  //   return summ/ArrayLen
+  // }
+  type Result = {
+    [key: string]: {
+      avgTmax: number;
+      avgTmin: number;
+      avgHumidity: number;
+    };
+  };
+  type ResultF = {
+    [key: string]: {
+      avgTmax: number;
+      avgTmin: number;
+      //avgHumidity:number,
+    };
+  };
   type avgRes = {
     [key: string]: {
       tmaxSum: number;
@@ -263,11 +658,11 @@ const Home: NextPage = () => {
     [key: string]: {
       tmaxSum: number;
       tminSum: number;
-      
+
       count: number;
     };
   };
-  function calculateAverages(data:any) {
+  function calculateAverages(data: any) {
     const reformattedData: avgRes = {};
 
     // Reformat the createdAt date and calculate averages
@@ -291,7 +686,7 @@ const Home: NextPage = () => {
     }
 
     // Calculate averages and format output
-    const result:Result = {};
+    const result: Result = {};
     for (const createdAt in reformattedData) {
       const avgEntry = reformattedData[createdAt];
       const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
@@ -307,7 +702,7 @@ const Home: NextPage = () => {
 
     return result;
   }
-  function calculateAveragesF(data:any) {
+  function calculateAveragesF(data: any) {
     const reformattedData: avgResF = {};
 
     // Reformat the createdAt date and calculate averages
@@ -323,17 +718,17 @@ const Home: NextPage = () => {
             count: 0,
           };
         }
-        if(entry._avg.tmax!==null){
-        reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
-        reformattedData[createdAt]!.tminSum += entry._avg.tmin;
-        //reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
-        reformattedData[createdAt]!.count++;
+        if (entry._avg.tmax !== null) {
+          reformattedData[createdAt]!.tmaxSum += entry._avg.tmax;
+          reformattedData[createdAt]!.tminSum += entry._avg.tmin;
+          //reformattedData[createdAt]!.humiditySum += entry._avg.humidity;
+          reformattedData[createdAt]!.count++;
         }
       }
     }
 
     // Calculate averages and format output
-    const result:ResultF = {};
+    const result: ResultF = {};
     for (const createdAt in reformattedData) {
       const avgEntry = reformattedData[createdAt];
       const avgTmax = avgEntry!.tmaxSum / avgEntry!.count;
@@ -356,7 +751,6 @@ const Home: NextPage = () => {
 
   //---------------------func to do the same
 
-  
   const chartOptions = {
     plugins: {
       legend: {
@@ -379,18 +773,18 @@ const Home: NextPage = () => {
     },
   };
   //////////
-  function chartfunc(data:Result){
+  function chartfuncErr(
+    data1: any[] | undefined,
+    data2: number[] | undefined,
+    data3: number[] | undefined
+  ) {
     return {
-      labels: Object.keys(data)
-        .sort()
-        .map((forecastDay) => forecastDay.toString()),
+      labels: data1,
       // labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
       datasets: [
         {
-          label: "Max Temp",
-          data: Object.keys(data)
-            .sort()
-            ?.map((date) => data[date]?.avgTmax),
+          label: "Max Temp MAE",
+          data: data2,
           fill: false,
           borderColor: "rgb(255, 69, 0)",
           tention: 0.7,
@@ -400,10 +794,8 @@ const Home: NextPage = () => {
           pointHoverRadius: 7, // Radius of the data points when hovered
         },
         {
-          label: "Min Temp",
-          data: Object.keys(data)
-            .sort()
-            ?.map((date) => data[date]?.avgTmin),
+          label: "Min Temp MAE",
+          data: data3,
           fill: false,
           borderColor: "rgb(75, 192, 192)",
           tention: 0.7,
@@ -414,59 +806,94 @@ const Home: NextPage = () => {
         },
       ],
     };
-  };
-  function chartfuncF(data:ResultF){
+  }
+  function chartfunc(data: Result) {
     return {
       labels: Object.keys(data)
         .sort()
         .map((forecastDay) => forecastDay.toString()),
       // labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
-      datasets: [
-        {
-          label: "Max Temp",
-          data: Object.keys(data)
-            .sort()
-            ?.map((date) => data[date]?.avgTmax),
-          fill: false,
-          borderColor: "rgb(255, 69, 0)",
-          tention: 0.7,
-          pointBackgroundColor: "red", // Color of the data points
-          pointBorderColor: "red", // Border color of the data points
-          pointRadius: 5, // Radius of the data points when not hovered
-          pointHoverRadius: 7, // Radius of the data points when hovered
-        },
-        {
-          label: "Min Temp",
-          data: Object.keys(data)
-            .sort()
-            ?.map((date) => data[date]?.avgTmin),
-          fill: false,
-          borderColor: "rgb(75, 192, 192)",
-          tention: 0.7,
-          pointBackgroundColor: "blue", // Color of the data points
-          pointBorderColor: "blue", // Border color of the data points
-          pointRadius: 5, // Radius of the data points when not hovered
-          pointHoverRadius: 7, // Radius of the data points when hovered
-        },
-      ],
-    };
-  };
 
-  
+      datasets: [
+        {
+          label: "Max Temp",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmax),
+          fill: false,
+          borderColor: "rgb(255, 69, 0)",
+          tention: 0.7,
+          pointBackgroundColor: "red", // Color of the data points
+          pointBorderColor: "red", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+        {
+          label: "Min Temp",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmin),
+          fill: false,
+          borderColor: "rgb(75, 192, 192)",
+          tention: 0.7,
+          pointBackgroundColor: "blue", // Color of the data points
+          pointBorderColor: "blue", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+      ],
+    };
+  }
+  function chartfuncF(data: ResultF) {
+    return {
+      labels: Object.keys(data)
+        .sort()
+        .map((forecastDay) => forecastDay.toString()),
+      // labels: dataFdateDaliVali?.map((date) => date.date.toString()).reverse(),
+      datasets: [
+        {
+          label: "Max Temp",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmax),
+          fill: false,
+          borderColor: "rgb(255, 69, 0)",
+          tention: 0.7,
+          pointBackgroundColor: "red", // Color of the data points
+          pointBorderColor: "red", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+        {
+          label: "Min Temp",
+          data: Object.keys(data)
+            .sort()
+            ?.map((date) => data[date]?.avgTmin),
+          fill: false,
+          borderColor: "rgb(75, 192, 192)",
+          tention: 0.7,
+          pointBackgroundColor: "blue", // Color of the data points
+          pointBorderColor: "blue", // Border color of the data points
+          pointRadius: 5, // Radius of the data points when not hovered
+          pointHoverRadius: 7, // Radius of the data points when hovered
+        },
+      ],
+    };
+  }
 
   // Format the current date as a datetime string using date-fns
   //const formattedDateTime = format(
-    //currentrrDate,
-    //"yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
+  //currentrrDate,
+  //"yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
   //);
   //const router=useRouter()
 
   //const [dateForDetailed, setDateForDetailed] = useState(new Date())
 
   //const {data: queryData} =  api.providers.getCertainDateDali.useQuery({ cityId: city, date: dateForDetailed })
-  
+
   // const fetchForDetailed = async (fromButton: any, city: string) => {
-    
+
   //   setDateForDetailed(new Date(fromButton))
   //   router.push({
   //     pathname:"/detailed",
@@ -474,7 +901,7 @@ const Home: NextPage = () => {
   //     //query:{data:[JSON.stringify(dateForDetailed),JSON.stringify(city.toString())]}
   //   })
   // }
-  
+  //const FinalArr = func2(someData1,someData2,someData3)
   /////////
   return (
     <>
@@ -499,7 +926,7 @@ const Home: NextPage = () => {
             >
               Forecast
             </a>
-            
+
             {/* <div className="border-slate-400 flex rounded-xl border-2 bg-thirdLayer p-3">
               {!user.isSignedIn && (
                 <div className="flex justify-center">
@@ -528,16 +955,20 @@ const Home: NextPage = () => {
             ))}
           </ul>
         </div>
-        <div className="border-slate-600 m-4 p-4 flex flex-grow flex-col rounded-lg border-2 border-solid bg-secondLayer">
+        <div className="border-slate-600 m-4 flex flex-grow flex-col rounded-lg border-2 border-solid bg-secondLayer p-4">
           {!city && (
-            <div className="flex flex-col p-4 justify-center rounded-lg border-2 border-solid bg-thirdLayer">
-              <p className="flex justify-center font-mono font-semibold text-xl">Please select a city</p>
-              <div className="flex p-4 m-4 justify-center rounded-lg border-2 border-solid bg-gray-400">
-                <p>After selecting a city, you will be presented with information about the <span className="underline">past week</span> from three different weather forecast sources.</p>
+            <div className="flex flex-col justify-center rounded-lg border-2 border-solid bg-thirdLayer p-4">
+              <p className="font-mono flex justify-center text-xl font-semibold">
+                Please select a city
+              </p>
+              <div className="m-4 flex justify-center rounded-lg border-2 border-solid bg-gray-400 p-4">
+                <p>
+                  After selecting a city, you will be presented with information
+                  about the <span className="underline">past week</span> from
+                  three different weather forecast sources.
+                </p>
               </div>
             </div>
-            
-            
           )}
           {city && (
             <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-secondLayer ">
@@ -579,20 +1010,55 @@ const Home: NextPage = () => {
                   </tbody>
                 </table>
               </div>*/}
+              <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
+                
+                <div className="flex flex-row justify-center">
+                  <div className="flex flex-col gap-2 p-4">
+                    <p className="font-mono text-md font-semibold">
+                      The average MAE for Tmax from the different providers for
+                      today is:
+                    </p>
+                    <p>Dalivali: {SD1AvgTmax.toFixed(2)} </p>
+                    <p>Freemeteo: {SD2AvgTmax.toFixed(2)} </p>
+                    <p>Sinoptik: {SD3AvgTmax.toFixed(2)} </p>
+                  </div>
+                  <div className="flex flex-col gap-2 p-4">
+                    <p className="font-mono text-md font-semibold">
+                      The average MAE for Tmin from the different providers for
+                      today is:</p>
+                      <p>Dalivali: {SD1AvgTmin.toFixed(2)} </p>
+                      <p>Freemeteo: {SD2AvgTmin.toFixed(2)} </p>
+                      <p>Sinoptik: {SD3AvgTmin.toFixed(2)} </p>
+                    
+                  </div>
+                </div>
+              </div>
 
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="font-mono font-semibold underline-offset-8 underline text-lg">From Dalivali for Today</p>
+                  <p className="font-mono text-lg font-semibold underline underline-offset-8">
+                    From Dalivali for Today
+                  </p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
-                    <Line data={chartfunc(averageDataForTodayDali)} options={chartOptions}></Line>
+                    <Line
+                      data={chartfunc(averageDataForTodayDali)}
+                      options={chartOptions}
+                    ></Line>
+                    <Line
+                      data={chartfuncErr(
+                        DateTrSomeData1,
+                        TmaxTrSomeData1,
+                        TminTrSomeData1
+                      )}
+                      options={chartOptions}
+                    ></Line>
                   </div>
                   <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
                     {Object.keys(averageDataForTodayDali)
                       .sort()
                       .map((date) => (
-                        
                         <div className="rounded-lg bg-white p-6 shadow-md">
                           <h2 className="mb-4 text-xl font-semibold">
                             From: {date}
@@ -617,14 +1083,16 @@ const Home: NextPage = () => {
                           <div className="mt-4">
                             <Link
                               //onClick={() => fetchForDetailed(date, city.toString())}
-                              className="text-gray-800 hover:underline" href={{
-                                pathname:'/detailed',
-                                query:{
+                              className="text-gray-800 hover:underline"
+                              href={{
+                                pathname: "/detailed",
+                                query: {
                                   date: date,
                                   cityId: city,
-                                  provider: 'dali'
-                                }
-                              }}                            >
+                                  provider: "dali",
+                                },
+                              }}
+                            >
                               Details about this day
                             </Link>
                           </div>
@@ -636,11 +1104,24 @@ const Home: NextPage = () => {
               {/* cards for freemeteo ----------------------------------------------------- */}
               <div className="border-slate-400 m-4 max-h-fit flex-grow flex-col items-center justify-center rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="font-mono font-semibold underline-offset-8 underline text-lg">From Freemeteo for Today</p>
+                  <p className="font-mono text-lg font-semibold underline underline-offset-8">
+                    From Freemeteo for Today
+                  </p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
-                    <Line data={chartfuncF(averageDataForTodayFree)} options={chartOptions}></Line>
+                    <Line
+                      data={chartfuncF(averageDataForTodayFree)}
+                      options={chartOptions}
+                    ></Line>
+                    <Line
+                      data={chartfuncErr(
+                        DateTrSomeData2,
+                        TmaxTrSomeData2,
+                        TminTrSomeData2
+                      )}
+                      options={chartOptions}
+                    ></Line>
                   </div>
                   <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
                     {Object.keys(averageDataForTodayFree).map((date) => (
@@ -660,18 +1141,20 @@ const Home: NextPage = () => {
                   Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
                 </p> */}
                         <div className="mt-4">
-                        <Link
-                              //onClick={() => fetchForDetailed(date, city.toString())}
-                              className="text-gray-800 hover:underline" href={{
-                                pathname:'/detailed',
-                                query:{
-                                  date: date,
-                                  cityId: city,
-                                  provider: 'free'
-                                }
-                              }}                            >
-                              Details about this day
-                            </Link>
+                          <Link
+                            //onClick={() => fetchForDetailed(date, city.toString())}
+                            className="text-gray-800 hover:underline"
+                            href={{
+                              pathname: "/detailed",
+                              query: {
+                                date: date,
+                                cityId: city,
+                                provider: "free",
+                              },
+                            }}
+                          >
+                            Details about this day
+                          </Link>
                         </div>
                       </div>
                     ))}
@@ -681,11 +1164,24 @@ const Home: NextPage = () => {
               {/* ---------------------------------------------- */}
               <div className="border-slate-400 m-4 max-h-fit flex-grow flex-col items-center justify-center rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
-                  <p className="font-mono font-semibold underline-offset-8 underline text-lg">From Sinoptik for Today</p>
+                  <p className="font-mono text-lg font-semibold underline underline-offset-8">
+                    From Sinoptik for Today
+                  </p>
                 </div>
                 <div className="flex flex-row">
                   <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
-                    <Line data={chartfunc(averageDataForTodaySino)} options={chartOptions}></Line>
+                    <Line
+                      data={chartfunc(averageDataForTodaySino)}
+                      options={chartOptions}
+                    ></Line>
+                    <Line
+                      data={chartfuncErr(
+                        DateTrSomeData3,
+                        TmaxTrSomeData3,
+                        TminTrSomeData3
+                      )}
+                      options={chartOptions}
+                    ></Line>
                   </div>
                   <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
                     {Object.keys(averageDataForTodaySino)
@@ -709,16 +1205,18 @@ const Home: NextPage = () => {
                   Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
                 </p> */}
                           <div className="mt-4">
-                          <Link
+                            <Link
                               //onClick={() => fetchForDetailed(date, city.toString())}
-                              className="text-gray-800 hover:underline" href={{
-                                pathname:'/detailed',
-                                query:{
+                              className="text-gray-800 hover:underline"
+                              href={{
+                                pathname: "/detailed",
+                                query: {
                                   date: date,
                                   cityId: city,
-                                  provider: 'sino'
-                                }
-                              }}                            >
+                                  provider: "sino",
+                                },
+                              }}
+                            >
                               Details about this day
                             </Link>
                           </div>
