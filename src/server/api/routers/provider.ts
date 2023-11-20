@@ -228,7 +228,7 @@ export const providersRouter = createTRPCRouter({
     getCertainDateFree: publicProcedure.input(z.object({cityId: z.number().optional(),date:z.date().optional()})).query(async({ctx,input})=>{
       if(!input.cityId) return [];
       if(!input.date) return [];
-      const result = await ctx.prisma.dalivali.findMany({
+      const result = await ctx.prisma.freemeteo.findMany({
         include:{
           image:true
         },

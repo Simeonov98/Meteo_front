@@ -48,7 +48,7 @@ import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 
 const Home: NextPage = () => {
   const searchParams = useSearchParams();
-
+  console.log(searchParams.get("date"))
   const datestr = searchParams.get("date");
 
   const [provider, setProvider] = useState(searchParams.get("provider"));
@@ -158,9 +158,9 @@ const Home: NextPage = () => {
                 <th>Hour</th>
                 <th>Max Temp</th>
                 <th>Min Temp</th>
-                <th>Wind Spd</th>
+                {provider != "free" && <th>Wind Spd</th>}
                 <th>Wind Dir</th>
-                {provider != "sino" && <th>Humidity</th>}
+                {provider == "dali" && <th>Humidity</th>}
                 <th>Text</th>
                 <th>Img</th>
               </tr>
@@ -193,9 +193,9 @@ const Home: NextPage = () => {
                     <td>{date.createdAt.getHours()}</td>
                     <td>{date.tmax}</td>
                     <td>{date.tmin}</td>
-                    <td>{date.wspd}</td>
+                    {/* <td>{date.wspd}</td> */}
                     <td>{date.wdir}</td>
-                    <td>{date.humidity}</td>
+                    {/* <td>{date.humidity}</td> */}
                     <td>{date.text}</td>
                     <td>
                       <img
