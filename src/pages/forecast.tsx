@@ -581,7 +581,7 @@ const Home: NextPage = () => {
                   </tbody>
                 </table>
               </div>*/}
-
+              {/* cards from dalivali -------------------------------------------*/}
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
                   <p className="font-mono font-semibold underline-offset-8 underline text-lg">From DaliVali for next week</p>
@@ -635,6 +635,57 @@ const Home: NextPage = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* cards from sinoptik ---------------------------------------------- */}
+              <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
+                <div className="flex flex-row justify-center p-4">
+                  <p className="font-mono font-semibold underline-offset-8 underline text-lg">From Sinoptik for next week</p>
+                </div>
+                <div className="flex flex-row">
+                  <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
+                    <Line
+                      data={chartfuncDate(averageDataForNextWeekSino)}
+                      options={chartOptions}
+                    ></Line>
+                  </div>
+                  <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
+                    {Object.keys(averageDataForNextWeekSino).map((date) => (
+                      <div className="mx-auto max-w-lg rounded-lg bg-white p-6 shadow-md">
+                        <h2 className="mb-4 text-xl font-semibold">
+                          For: {date}
+                        </h2>
+                        <p className="text-gray-600">
+                          Max Temp:{" "}
+                          {averageDataForNextWeekSino[date]?.avgTmax.toFixed(2)}{" "}
+                          °C
+                        </p>
+                        <p className="text-gray-600">
+                          Min Temp:{" "}
+                          {averageDataForNextWeekSino[date]?.avgTmin.toFixed(2)}{" "}
+                          °C
+                        </p>
+                        {/* <p className="text-gray-600">
+                  Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
+                </p> */}
+                        <div className="mt-4">
+                        <Link
+                              //onClick={() => fetchForDetailed(date, city.toString())}
+                              className="text-gray-800 hover:underline" href={{
+                                pathname:'/detailed',
+                                query:{
+                                  date: date,
+                                  cityId: city,
+                                  provider: 'sino '
+                                }
+                              }}                            >
+                              Details about this day
+                            </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               {/* cards for freemeteo ----------------------------------------------------- */}
               <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
                 <div className="flex flex-row justify-center p-4">
@@ -675,56 +726,6 @@ const Home: NextPage = () => {
                                   date: date,
                                   cityId: city,
                                   provider: 'free'
-                                }
-                              }}                            >
-                              Details about this day
-                            </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {/* ---------------------------------------------- */}
-              <div className="border-slate-400 m-4 flex max-h-fit flex-grow flex-col rounded-lg border-2 border-solid bg-thirdLayer p-4 ">
-                <div className="flex flex-row justify-center p-4">
-                  <p className="font-mono font-semibold underline-offset-8 underline text-lg">From Sinoptik for next week</p>
-                </div>
-                <div className="flex flex-row">
-                  <div className="border-slate-400 flex w-1/2 flex-col flex-wrap p-4">
-                    <Line
-                      data={chartfuncDate(averageDataForNextWeekSino)}
-                      options={chartOptions}
-                    ></Line>
-                  </div>
-                  <div className="border-slate-400 flex w-1/2 flex-row flex-wrap gap-4">
-                    {Object.keys(averageDataForNextWeekSino).map((date) => (
-                      <div className="mx-auto max-w-lg rounded-lg bg-white p-6 shadow-md">
-                        <h2 className="mb-4 text-xl font-semibold">
-                          For: {date}
-                        </h2>
-                        <p className="text-gray-600">
-                          Max Temp:{" "}
-                          {averageDataForNextWeekSino[date]?.avgTmax.toFixed(2)}{" "}
-                          °C
-                        </p>
-                        <p className="text-gray-600">
-                          Min Temp:{" "}
-                          {averageDataForNextWeekSino[date]?.avgTmin.toFixed(2)}{" "}
-                          °C
-                        </p>
-                        {/* <p className="text-gray-600">
-                  Hum: {averageDataForTodayFree[date].avgHumidity.toFixed(2)} %
-                </p> */}
-                        <div className="mt-4">
-                        <Link
-                              //onClick={() => fetchForDetailed(date, city.toString())}
-                              className="text-gray-800 hover:underline" href={{
-                                pathname:'/detailed',
-                                query:{
-                                  date: date,
-                                  cityId: city,
-                                  provider: 'sino '
                                 }
                               }}                            >
                               Details about this day
