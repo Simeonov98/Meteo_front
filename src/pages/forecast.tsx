@@ -485,7 +485,9 @@ const Home: NextPage = () => {
           >
             MergeMeteo.
           </a>
-
+          <nav className="flex flex-row">
+            <p className="flex flex-col font-bold text-white">This app shows the diviation between prognosed weather and latest data from different weather sources</p>
+          </nav>
           <nav className="flex flex-row gap-1">
             {currPage=='/forecast'&& (
             <a
@@ -509,6 +511,7 @@ const Home: NextPage = () => {
       <main className="flex justify-center p-4">
         <div className="m-4 flex flex-col rounded-lg border-2 border-solidborder-gray-200 bg-firstLayer ">
           <ul className="flex flex-col flex-wrap justify-around border-gray-200 text-center text-xl font-bold leading-none text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <p className="flex-wrap justify-around pt-6 text-white">Select a city:</p>
             {dataCities?.map((city) => (
               <li className="mr-2">
                 <Button
