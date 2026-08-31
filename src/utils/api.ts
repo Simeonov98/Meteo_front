@@ -18,10 +18,22 @@ const getBaseUrl = () => {
 
 /** A set of type-safe react-query hooks for your tRPC API. */
 export const api = createTRPCNext<AppRouter>({
+  // @trpc/next@11.18.0's `WithTRPCConfig` type both requires a top-level
+  // `transformer` (via `TransformerOptions`, since our router sets one) and
+  // forbids it (it also extends the vanilla client's `CreateTRPCClientOptions`,
+  // where `transformer` moved to individual links and is typed as a
+  // TypeError-branded property) — a genuine inconsistency in that package's
+  // own .d.ts, reproducible with transformer present *or* absent. Confirmed
+  // by reading node_modules/@trpc/{next,client}/dist/*.d.cts directly; the
+  // per-link `transformer: superjson` below is what actually matters at
+  // runtime for wire (de)serialization.
+  // @ts-expect-error -- see comment above; @trpc/next's own types conflict here
   config() {
     return {
       /**
-       * Transformer used for data de-serialization from the server.
+       * Transformer used by `withTRPC`'s own SSR/SSG state dehydration.
+       * (Separate from the per-link transformer below, which is what
+       * actually (de)serializes data over the wire.)
        *
        * @see https://trpc.io/docs/data-transformers
        */
@@ -40,6 +52,9 @@ export const api = createTRPCNext<AppRouter>({
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          // Transformer used for data de-serialization from the server.
+          // @see https://trpc.io/docs/data-transformers
+          transformer: superjson,
         }),
       ],
     };
